@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const { v4 } = require('uuid')
 const cors = require('cors')
-const sequelize = new Sequelize('postgres://postgres:postgres@localhost:5432/marketplace', {
+const sequelize = new Sequelize('postgres://marketplace_vnss_user:z2rxcm77KHhqhCF9iqeknBaR8dJImPuu@dpg-cot6ar2cn0vc73a76cbg-a/marketplace_vnss', {
     dialect: "postgres",
 })
 
