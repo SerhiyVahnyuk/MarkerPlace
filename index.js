@@ -546,6 +546,10 @@ router.post("/category",(req,res)=>{
                 })
             }
             Category.create({name:name})
+            return res.status(201).json({
+                status:201,
+                message:"Category was created"
+            })
         } else {
             return res.status(403).json({
                 status:403,
