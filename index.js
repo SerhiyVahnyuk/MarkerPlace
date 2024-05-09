@@ -545,10 +545,11 @@ router.post("/category",(req,res)=>{
                     message:"Name must exist"
                 })
             }
-            Category.create({name:name})
-            return res.status(201).json({
-                status:201,
-                message:"Category was created"
+            Category.create({name:name}).then((category)=>{
+                return res.status(201).json({
+                    status:201,
+                    message:`Category was created with id - ${category.id}`
+                })
             })
         } else {
             return res.status(403).json({
