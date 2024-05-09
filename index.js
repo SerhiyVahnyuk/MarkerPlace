@@ -204,7 +204,7 @@ router.post('/user', (req, res) => {
                 message: 'name must be longer than 3 symbols'
             })
         }
-    } else {
+    } else if(!name || name == null) {
         return res.status(400).json({
             status: 400,
             message: 'please enter name'
@@ -218,7 +218,7 @@ router.post('/user', (req, res) => {
                 message: 'please enter phone number'
             })
         }
-    } else {
+    } else if(!phone || phone == null){
         return res.status(400).json({
             status: 400,
             message: 'please enter phone number'
@@ -232,7 +232,7 @@ router.post('/user', (req, res) => {
                 message: 'password must be longer than 3 symbols'
             })
         }
-    } else {
+    } else  if(!password || password == null){
         return res.status(400).json({
             status: 400,
             message: 'please enter password'
@@ -255,6 +255,11 @@ router.post('/user', (req, res) => {
                 message: 'Please enter your city'
             })
         }
+    } else if(!phone || phone == null){
+        return res.status(400).json({
+            status: 400,
+            message: 'Please enter your city'
+        })
     }
 
     if (email != null){
@@ -282,16 +287,13 @@ router.post('/user', (req, res) => {
                 }
             })
         }
-    } else {
+    } else if(!email || email == null){
         return res.status(400).json({
             status: 400,
             message: 'please enter email'
         })
     }
-
-     
 })
-
 // Get user info
 router.get('/user', (req, res) => {
     checkUser(req,res,(user)=>{
