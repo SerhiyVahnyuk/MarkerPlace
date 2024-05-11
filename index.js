@@ -486,7 +486,7 @@ router.post('/product', upload.single('file'), (req, res) => {
                             image = img[0]+img[1]
                         }
                         await Product.create({name:name,description:description,price:price,category:categoryId,prodImage:image,userId:userId}).then((product)=>{ 
-                            return res.status(201).redirect("http://localhost:3001/products")
+                            return res.status(201).redirect("http://localhost:3001/")
                         })
                     })
                 } else {
