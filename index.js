@@ -572,4 +572,28 @@ router.get('/public/:fileName', (req, res) => {
     })
 })
 
+router.get("/category",(req,res)=>{
+    Category.findAll().then((categories)=>{
+        if (categories){
+            if (categories.length < 1){
+                return res.status(404).json({
+                    status:404,
+                    message:"No categories were found"
+                })
+            }
+
+            return res.status(200).json({
+                status:200,
+                categories:categories
+            })
+
+        } else {
+            return res.status(404).json({
+                status: 404,
+                message: "No categories were found"
+            })
+        }
+    })
+})
+
 router.listen('3000')
