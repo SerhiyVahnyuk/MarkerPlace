@@ -5,7 +5,7 @@ const fs = require('fs')
 const path = require('path')
 const { v4 } = require('uuid')
 const cors = require('cors')
-const sequelize = new Sequelize('postgres://marketplace_vnss_user:z2rxcm77KHhqhCF9iqeknBaR8dJImPuu@dpg-cot6ar2cn0vc73a76cbg-a/marketplace_vnss', {
+const sequelize = new Sequelize('postgres://postgres:postgres@localhost:5432/marketplace', {
     dialect: "postgres",
 })
 
@@ -128,21 +128,31 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         let image = file.originalname
-        Product.findAll({where:{prodImage:image}}).then(async (prods) => {
-            if (prods.length > 0){
-                let img = image.split('.') 
-                img[0] += `(${prods.length}).`
-                image = img[0]+img[1]
+        console.log(image)
+        fs.exists(publicPath+"/"+image,(exist)=>{
+            if(exist){
+                fs.readdir(publicPath,(err,files)=>{
+                    let img = image.split('.') 
+                    img[img.length-1] = `(${files.length}).${img[img.length-1]}`
+                    let str = ""
+                    console.log(img)
+                    for(let i of img){
+                        console.log(i)
+                        str += i
+                        console.log(str)
+                    }
+                    cb(null,str)
+                })
+            } else {
+                cb(null, image)
             }
-        }).then(()=>{
-            cb(null, image);
         })
-    },
+    }
 }) 
   
-const upload = multer({ storage: storage })
+const upload = multer({ storage: storage, limits: { fieldSize: 25 * 1024 * 1024 } })
 
-function checkUser(req,res,callback){
+function checkUser(req,res,callback){ 
     let key = req.headers.key 
     if(key){
         User.findOne({where: {sshKey: key}}).then((user)=>{
@@ -166,7 +176,7 @@ function checkUser(req,res,callback){
                         status:404,
                         message:"User not found"
                     }) 
-                }
+                } 
             })
         } else {
             return res.status(400).json({
@@ -294,6 +304,7 @@ router.post('/user', (req, res) => {
         })
     }
 })
+
 // Get user info
 router.get('/user', (req, res) => {
     checkUser(req,res,(user)=>{
@@ -445,7 +456,7 @@ router.post('/product', upload.single('file'), (req, res) => {
         const description = req.body.description     
         const price = req.body.price
         const categoryId = req.body.categoryId
-        let image = req.file.originalname
+        let image = req.file.originalname 
         if (!categoryId){
             return res.status(400).json({ 
                 status:400, 
@@ -458,7 +469,7 @@ router.post('/product', upload.single('file'), (req, res) => {
                         return res.status(400).json({
                             status:400,
                             message:"Name must exist"
-                        })
+                        }) 
                     }
                     if(!description){
                         return res.status(400).json({
@@ -479,15 +490,39 @@ router.post('/product', upload.single('file'), (req, res) => {
                         })
                     }
 
-                    Product.findAll({where:{prodImage:image}}).then(async (prods) => {
-                        if (prods.length > 0){
-                            let img = image.split('.') 
-                            img[0] += `(${prods.length}).`
-                            image = img[0]+img[1]
+                    fs.exists(publicPath+"/"+image,async (exist)=>{
+                        console.log(image)
+                        if(exist){
+                            fs.readdir(publicPath,async (err,files)=>{
+                                let img = image.split('.') 
+                                img[img.length-1] = `(${files.length-1}).${img[img.length-1]}`
+                                let str = ""
+                                for(let i of img){
+                                    str += i
+                                }
+                                fs.exists(publicPath+"/"+str,async (exist)=>{
+                                    if(exist){
+                                        let img1 = image.split('.') 
+                                        img1[img1.length-1] = `(${files.length-1}).${img1[img1.length-1]}`
+                                        let str1 = ""
+                                        for(let i of img1){
+                                            str1 += i
+                                        }
+                                        await Product.create({name:name,description:description,price:price,category:categoryId,prodImage:str1,userId:userId}).then((product)=>{ 
+                                            return res.redirect(`http://localhost:3001/product/${product.dataValues.id}`)
+                                        })
+                                    } else {
+                                        await Product.create({name:name,description:description,price:price,category:categoryId,prodImage:image,userId:userId}).then((product)=>{ 
+                                            return res.redirect(`http://localhost:3001/product/${product.dataValues.id}`)
+                                        })
+                                    }
+                                })
+                            })
+                        }else{
+                            await Product.create({name:name,description:description,price:price,category:categoryId,prodImage:image,userId:userId}).then((product)=>{ 
+                                return res.redirect(`http://localhost:3001/product/${product.dataValues.id}`)
+                            })
                         }
-                        await Product.create({name:name,description:description,price:price,category:categoryId,prodImage:image,userId:userId}).then((product)=>{ 
-                            return res.status(201).redirect("http://localhost:3001/")
-                        })
                     })
                 } else {
                     return res.status(404).json({
@@ -560,18 +595,6 @@ router.post("/category",(req,res)=>{
     })
 })
 
-router.get('/public/:fileName', (req, res) => {
-    const fileName = req.params.fileName
-    const filePath = path.join(publicPath, fileName)
-    fs.exists(filePath, (exists) =>{
-        if (exists){
-            res.sendFile(filePath)
-        } else{
-            res.status(404).send('File not found')
-        }
-    })
-})
-
 router.get("/category",(req,res)=>{
     Category.findAll().then((categories)=>{
         if (categories){
@@ -592,6 +615,18 @@ router.get("/category",(req,res)=>{
                 status: 404,
                 message: "No categories were found"
             })
+        }
+    })
+})
+
+router.get('/public/:fileName', (req, res) => {
+    const fileName = req.params.fileName
+    const filePath = path.join(publicPath, fileName)
+    fs.exists(filePath, (exists) =>{
+        if (exists){
+            res.sendFile(filePath)
+        } else{
+            res.status(404).send('File not found')
         }
     })
 })
